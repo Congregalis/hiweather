@@ -1,6 +1,7 @@
 package com.hiweather.android;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -23,6 +24,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.hiweather.android.gson.Forecast;
 import com.hiweather.android.gson.Weather;
+import com.hiweather.android.service.AutoUpdateService;
 import com.hiweather.android.util.HttpUtil;
 import com.hiweather.android.util.Utility;
 
@@ -252,5 +254,7 @@ public class WeatherActivity extends AppCompatActivity {
         sportText.setText(sport);
         weatherInfoText.setVisibility(View.VISIBLE);
 
+        Intent intent = new Intent(this, AutoUpdateService.class);
+        startService(intent);
     }
 }

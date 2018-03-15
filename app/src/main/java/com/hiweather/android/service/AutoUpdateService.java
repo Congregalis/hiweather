@@ -4,8 +4,20 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.IBinder;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
+
+import com.hiweather.android.gson.Weather;
+import com.hiweather.android.util.HttpUtil;
+import com.hiweather.android.util.Utility;
+
+import java.io.IOException;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Response;
 
 public class AutoUpdateService extends Service {
     public AutoUpdateService() {
@@ -34,13 +46,43 @@ public class AutoUpdateService extends Service {
      * 更新天气信息
      */
     private void updateWeather() {
-        
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        String weatherString = prefs.getString("weather", null);
+        if (weatherString != null) {
+            // 有缓存时直接解析天气
+            Weather weather = Utility.handleWeatherResponse(weatherString);
+            String weatherId = weather.basic.weatherId;
+
+            String weatherUrl = "http://guolin.tech/api/weather?cityid=" +
+                    weatherId + "&key=6e6348564c16404ca606bf0373af493a";
+            HttpUtil.senOkHttpRequest(weatherUrl, new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    e.printStackTrace();
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    String responseText = response.body().string();
+                    Weather weather = Utility.handleWeatherResponse(responseText);
+                    if ( weather != null && "ok".equals(weather.status)) {
+                        SharedPreferences.Editor editor = PreferenceManager
+                                .getDefaultSharedPreferences(AutoUpdateService.this).edit();
+                        editor.putString("weather", responseText);
+                        editor.apply();
+                    }
+                }
+            });
+        }
     }
 
     /**
      * 更新背景
      */
     private void updateBingPic() {
-
+        SharedPreferences.Editor editor = PreferenceManager
+                .getDefaultSharedPreferences(AutoUpdateService.this).edit();
+        editor.putString("bing_pic", "https://img.xjh.me/random_img.php?type=bg&ctype=nature&return=302&device=mobile");
+        editor.apply();
     }
 }
